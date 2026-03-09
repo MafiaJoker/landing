@@ -46,9 +46,6 @@ export function Contacts({ contactsRef }) {
       <p className="lg:text-3xl sm:text-2xl text-xl leading-normal mt-6">
         Мы всегда на связи в телеграме и инстаграме - просто отправьте сообщение, и мы ответим вам в рабочее время с 14:00 до 20:00.
       </p>
-      <p className="lg:text-2xl sm:text-xl text-lg leading-normal mt-4 text-gray-300">
-        Игры проходят по адресу Григора Лусаворича 7, гостиница Арарат, 2 этаж, клуб Status.
-      </p>
       <ul className="flex gap-5 mt-9">
         {
           links.map(link => (
