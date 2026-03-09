@@ -3,8 +3,34 @@ import Slider from 'react-slick'
 import 'slick-carousel/slick/slick.css'
 import 'slick-carousel/slick/slick-theme.css'
 
+const scheduleData = [
+  { day: 'Понедельник', time: '20:00-01:00', type: 'Мафия на армянском' },
+  { day: 'Вторник', time: '20:00-01:00', type: 'Основной состав' },
+  { day: 'Четверг', time: '20:00-01:00', type: 'Основной состав' },
+  { day: 'Пятница', time: '20:00-01:00', type: 'Мафия для начинающих' },
+  { day: 'Суббота', time: '19:30-02:00', type: 'Основной состав' },
+]
+
+function groupByType(data) {
+  const groups = {}
+  for (const item of data) {
+    if (!groups[item.type]) {
+      groups[item.type] = { type: item.type, days: [], times: new Set() }
+    }
+    groups[item.type].days.push(item.day)
+    groups[item.type].times.add(item.time)
+  }
+  return Object.values(groups).map(g => ({
+    type: g.type,
+    days: g.days.join(', '),
+    time: [...g.times].join(' / '),
+  }))
+}
+
 // eslint-disable-next-line react/prop-types
 export function Schedule({ scheduleRef }) {
+  const grouped = groupByType(scheduleData)
+
   const settings = {
     dots: true,
     infinite: false,
@@ -35,47 +61,25 @@ export function Schedule({ scheduleRef }) {
       <h2 className="lg:text-7xl sm:text-5xl text-3xl font-medium leading-snug lg:border-b border-white/50">Расписание</h2>
       <div className="hidden mt-6 lg:flex justify-between ">
         <ul className="flex flex-col gap-5 text-3xl">
-          <li>Понедельник</li>
-          <li>Вторник</li>
-          <li>Четверг</li>
-          <li>Пятница</li>
-          <li>Суббота</li>
+          {scheduleData.map((item, i) => <li key={i}>{item.day}</li>)}
         </ul>
         <ul className="flex flex-col gap-5 text-3xl">
-          <li>20:00-01:00</li>
-          <li>20:00-01:00</li>
-          <li>20:00-01:00</li>
-          <li>20:00-01:00</li>
-          <li>19:30-02:00</li>
+          {scheduleData.map((item, i) => <li key={i}>{item.time}</li>)}
         </ul>
         <ul className="flex flex-col gap-5 text-3xl">
-          <li>Мафия на армянском</li>
-          <li>Основной состав</li>
-          <li>Основной состав</li>
-          <li>Мафия для начинающих</li>
-          <li>Основной состав</li>
+          {scheduleData.map((item, i) => <li key={i}>{item.type}</li>)}
         </ul>
       </div>
 
       <div className="slider-container mt-2.5 lg:hidden">
         <Slider {...settings}>
-          <div className="bg-lightgray rounded-lg p-3 min-w-80">
-            <h3 className="font-bold sm:text-xl text-base text-black">Основной состав</h3>
-            <p className="text-black mt-2 text-sm sm:text-base">🗓 Вторник, четверг, суббота</p>
-            <p className="text-black mt-1.5 text-sm sm:text-base">🕘20:00-01:00</p>
-          </div>
-
-          <div className="bg-lightgray rounded-lg p-3 min-w-80">
-            <h3 className="font-bold sm:text-xl text-base text-black">Мафия для начинающих</h3>
-            <p className="text-black mt-2 text-sm sm:text-base">🗓 Пятница</p>
-            <p className="text-black mt-1.5 text-sm sm:text-base">🕘20:00-01:00</p>
-          </div>
-
-          <div className="bg-lightgray rounded-lg p-3 min-w-80">
-            <h3 className="font-bold sm:text-xl text-base text-black">Мафия на армянском</h3>
-            <p className="text-black mt-2 text-sm sm:text-base">🗓 Среда</p>
-            <p className="text-black mt-1.5 text-sm sm:text-base">🕘20:00-01:00</p>
-          </div>
+          {grouped.map((group, i) => (
+            <div key={i} className="bg-lightgray rounded-lg p-3 min-w-80">
+              <h3 className="font-bold sm:text-xl text-base text-black">{group.type}</h3>
+              <p className="text-black mt-2 text-sm sm:text-base">🗓 {group.days}</p>
+              <p className="text-black mt-1.5 text-sm sm:text-base">🕘{group.time}</p>
+            </div>
+          ))}
         </Slider>
       </div>
     </section>
