@@ -4,7 +4,7 @@ import 'slick-carousel/slick/slick.css'
 import 'slick-carousel/slick/slick-theme.css'
 
 // eslint-disable-next-line react/prop-types
-export function Schedule({scheduleRef}) {
+export function Schedule({ scheduleRef }) {
   const settings = {
     dots: true,
     infinite: false,
@@ -35,8 +35,8 @@ export function Schedule({scheduleRef}) {
       <h2 className="lg:text-7xl sm:text-5xl text-3xl font-medium leading-snug lg:border-b border-white/50">Расписание</h2>
       <div className="hidden mt-6 lg:flex justify-between ">
         <ul className="flex flex-col gap-5 text-3xl">
+          <li>Понедельник</li>
           <li>Вторник</li>
-          <li>Среда</li>
           <li>Четверг</li>
           <li>Пятница</li>
           <li>Суббота</li>
@@ -49,8 +49,8 @@ export function Schedule({scheduleRef}) {
           <li>19:30-02:00</li>
         </ul>
         <ul className="flex flex-col gap-5 text-3xl">
-          <li>Основной состав</li>
           <li>Мафия на армянском</li>
+          <li>Основной состав</li>
           <li>Основной состав</li>
           <li>Мафия для начинающих</li>
           <li>Основной состав</li>
