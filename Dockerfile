@@ -7,7 +7,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile
+RUN yarn install --frozen-lockfile --production=false
 
 COPY index.html vite.config.js tailwind.config.js postcss.config.js ./
 COPY src ./src
