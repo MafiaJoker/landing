@@ -1,40 +1,76 @@
-name: Build and Deploy via FTP
+name: Deploy
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'yarn'
-
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-
-      - name: Build project
-        run: yarn build
-
-      - name: Install lftp
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq lftp
-
-      - name: Backup and deploy via FTP
+      - id: registry
         env:
-          FTP_HOST: ${{ secrets.FTP_HOST }}
-          FTP_USER: ${{ secrets.FTP_USER }}
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-          FTP_PORT: ${{ secrets.FTP_PORT }}
-          LOCAL_DIR: dist
-          REMOTE_DIR: ${{ vars.REMOTE_DIR || 'public_html' }}
-          BACKUP_DIR: ${{ vars.BACKUP_DIR || 'backup' }}
-        run: bash scripts/ftp-deploy.sh
+          RAW_URL: ${{ secrets.VULTR_REGISTRY_URL }}
+        run: |
+          host="${RAW_URL#https://}"
+          host="${host#http://}"
+          host="${host%/}"
+          if [[ -z "$host" ]]; then
+            echo "VULTR_REGISTRY_URL secret is empty" >&2
+            exit 1
+          fi
+          echo "host=${host}" >> "$GITHUB_OUTPUT"
+
+      - id: tag
+        run: echo "sha=${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ steps.registry.outputs.host }}
+          username: ${{ secrets.VULTR_REGISTRY_USERNAME }}
+          password: ${{ secrets.VULTR_REGISTRY_PASSWORD }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.registry.outputs.host }}/mafia-landing-web:${{ steps.tag.outputs.sha }}
+            ${{ steps.registry.outputs.host }}/mafia-landing-web:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@c0c8b32d33a5244f1e5947304550403b63930415 # v4
+
+      - name: Setup kustomize
+        uses: imranismail/setup-kustomize@2ba527d4d055ab63514ba50a99456fc35684947f # v2
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p "$HOME/.kube"
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > "$HOME/.kube/config"
+          chmod 0600 "$HOME/.kube/config"
+
+      - name: Apply manifests
+        env:
+          IMAGE: ${{ steps.registry.outputs.host }}/mafia-landing-web:${{ steps.tag.outputs.sha }}
+        run: |
+          echo "Deploying ${IMAGE}"
+          cd k8s
+          kustomize edit set image "mafia-landing-web=${IMAGE}"
+          kubectl apply -k .
+
+      - name: Wait for rollout
+        run: kubectl -n mafia-landing rollout status deployment/web --timeout=5m
